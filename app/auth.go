@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"diplomaProject/models"
 	u "diplomaProject/utils"
 	"fmt"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -27,7 +28,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		tokenHeader := r.Header.Get("Authorization") //Получение токена
 
 		if tokenHeader == "" { //Токен отсутствует, возвращаем  403 http-код Unauthorized
-			response := u.Message(false, "Missing auth token")
+			response = u.Message(false, "Missing auth token")
 			w.WriteHeader(http.StatusForbidden)
 			w.Header().Add("Content-type", "application/json")
 			u.Respond(w, response)
@@ -36,7 +37,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 
 		splitted := strings.Split(tokenHeader, " ") //Токен обычно поставляется в формате `Bearer {token-body}`, мы проверяем, соответствует ли полученный токен этому требованию
 		if len(splitted) != 2 {
-			response := u.Message(false, "Invalid/Malformed auth token")
+			response = u.Message(false, "Invalid/Malformed auth token")
 			w.WriteHeader(http.StatusForbidden)
 			w.Header().Add("Content-type", "application/json")
 			u.Respond(w, response)
@@ -51,7 +52,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		})
 
 		if err != nil { //Неправильный токен, как правило, возвращает 403 http-код
-			response := u.Message(false, "Malformed authentication token")
+			response = u.Message(false, "Malformed authentication token")
 			w.WriteHeader(http.StatusForbidden)
 			w.Header().Add("Content-type", "application/json")
 			u.Respond(w, response)
@@ -59,14 +60,14 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		}
 
 		if !token.Valid { //токен недействителен, возможно, не подписан на этом сервере
-			response := u.Message(false, "Token is not valid")
+			response = u.Message(false, "Token is not valid")
 			w.WriteHeader(http.StatusForbidden)
 			w.Header().Add("Content-type", "application/json")
 			u.Respond(w, response)
 		}
 
 		//Всё прошло хорошо, продолжаем выполнение запроса
-		fmt.Sprintf("User %", tk.Username) //Полезно для мониторинга
+		fmt.Sprintf("User %", tk.UserId) //Полезно для мониторинга
 		ctx := context.WithValue(r.Context(), "user", tk.UserId)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r) //передать управление следующему обработчику!
