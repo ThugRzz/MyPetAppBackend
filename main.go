@@ -19,6 +19,8 @@ func main() {
 		port = "8000"
 	}
 
+	handleAuth(router)
+
 	fmt.Println(port)
 
 	err := http.ListenAndServe(":"+port, router)
@@ -27,7 +29,6 @@ func main() {
 		fmt.Print(err)
 	}
 
-	handleAuth(router)
 }
 
 func handleAuth(router *mux.Router) {

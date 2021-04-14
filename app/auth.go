@@ -13,8 +13,8 @@ import (
 
 var JwtAuthentication = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		notAuth := []string{"/api/user/new", "api/user/login"} //Список эндпоинтов, для которых не требуется авторизация
-		requestPath := r.URL.Path                              //текущий путь запроса
+		notAuth := []string{"/api/user/new", "/api/user/login"} //Список эндпоинтов, для которых не требуется авторизация
+		requestPath := r.URL.Path                               //текущий путь запроса
 
 		//проверяем, не требует ли запрос аутентификации, обслуживаем запрос, если он не нужен
 		for _, value := range notAuth {
@@ -28,7 +28,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		tokenHeader := r.Header.Get("Authorization") //Получение токена
 
 		if tokenHeader == "" { //Токен отсутствует, возвращаем  403 http-код Unauthorized
-			response = u.Message(false, "Missing auth token")
+			response = u.Message(false, "Нет токена, пошел на хуй")
 			w.WriteHeader(http.StatusForbidden)
 			w.Header().Add("Content-type", "application/json")
 			u.Respond(w, response)
