@@ -47,9 +47,9 @@ func handleReferences(router *mux.Router) {
 		controllers.GetFoodReference).Methods("GET")
 
 	router.HandleFunc("/api/reference/care/{id}",
-		controllers.GetTrainingReferenceForBreed).Methods("GET")
+		controllers.GetCareReferenceForBreed).Methods("GET")
 	router.HandleFunc("/api/reference/cares",
-		controllers.GetTrainingReference).Methods("GET")
+		controllers.GetCareReference).Methods("GET")
 
 	router.HandleFunc("/api/reference/disease/{id}",
 		controllers.GetDiseaseReferenceForBreed).Methods("GET")
