@@ -96,7 +96,7 @@ func (account *Account) Create() map[string]interface{} {
 	account.Password = "" //удалить пароль
 
 	response := u.Message(true, "Account has been created")
-	response["account"] = account
+	response["data"] = account
 	return response
 }
 
@@ -147,7 +147,7 @@ func Login(email, password string) map[string]interface{} {
 
 	resp := u.Message(true, "Logged In")
 
-	resp["user"] = user
+	resp["data"] = user
 	return resp
 }
 
