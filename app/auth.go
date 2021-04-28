@@ -5,7 +5,7 @@ import (
 	"diplomaProject/models"
 	u "diplomaProject/utils"
 	"fmt"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 	"net/http"
 	"os"
 	"strings"
@@ -28,7 +28,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		tokenHeader := r.Header.Get("Authorization") //Получение токена
 
 		if tokenHeader == "" { //Токен отсутствует, возвращаем  403 http-код Unauthorized
-			response = u.Message(false, "Нет токена, пошел на хуй")
+			response = u.Message(false, "Вы не авторизованы. Доступ запрещен")
 			w.WriteHeader(http.StatusForbidden)
 			w.Header().Add("Content-type", "application/json")
 			u.Respond(w, response)
@@ -67,7 +67,7 @@ var JwtAuthentication = func(next http.Handler) http.Handler {
 		}
 
 		//Всё прошло хорошо, продолжаем выполнение запроса
-		fmt.Sprintf("User %", tk.UserId) //Полезно для мониторинга
+		_ = fmt.Sprintf("User %", tk.UserId) //Полезно для мониторинга
 		ctx := context.WithValue(r.Context(), "user", tk.UserId)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r) //передать управление следующему обработчику!

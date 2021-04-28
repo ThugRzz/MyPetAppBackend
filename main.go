@@ -21,6 +21,7 @@ func main() {
 
 	handleAuth(router)
 	handleReferences(router)
+	handlePhotoUpload(router)
 
 	fmt.Println(port)
 
@@ -29,7 +30,6 @@ func main() {
 	if err != nil {
 		fmt.Print(err)
 	}
-
 }
 
 func handleAuth(router *mux.Router) {
@@ -38,6 +38,10 @@ func handleAuth(router *mux.Router) {
 
 	router.HandleFunc("/api/user/login",
 		controllers.Authenticate).Methods("POST")
+}
+
+func handlePhotoUpload(router *mux.Router) {
+	router.HandleFunc("/test", controllers.Handler).Methods("POST")
 }
 
 func handleReferences(router *mux.Router) {
