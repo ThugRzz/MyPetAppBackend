@@ -13,8 +13,8 @@ import (
 
 var JwtAuthentication = func(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		notAuth := []string{"/api/user/new", "/api/user/login"} //Список эндпоинтов, для которых не требуется авторизация
-		requestPath := r.URL.Path                               //текущий путь запроса
+		notAuth := []string{"/api/user/new", "/api/user/login", "/api/pet/types", "/api/pet/breeds"} //Список эндпоинтов, для которых не требуется авторизация
+		requestPath := r.URL.Path                                                                    //текущий путь запроса
 
 		//проверяем, не требует ли запрос аутентификации, обслуживаем запрос, если он не нужен
 		for _, value := range notAuth {

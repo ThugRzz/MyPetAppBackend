@@ -2,24 +2,37 @@ package controllers
 
 import (
 	"bytes"
-	"fmt"
+	"diplomaProject/models"
+	u "diplomaProject/utils"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/globalsign/mgo/bson"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
 // UploadFileToS3 saves a file to aws bucket and returns the url to the file and an error if there's any
-func UploadFileToS3(s *session.Session, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+func UploadFileToS3(s *session.Session, file multipart.File, fileHeader *multipart.FileHeader,
+	w http.ResponseWriter, r *http.Request) {
 	// get the file size and read
 	// the file content into a buffer
+
+	tokenHeader := r.Header.Get("Authorization")
+	splitted := strings.Split(tokenHeader, " ")
+	tokenPart := splitted[1]
+
+	tk := &models.Token{}
+	_, _ = jwt.ParseWithClaims(tokenPart, tk, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("token_password")), nil
+	})
+
 	size := fileHeader.Size
 	buffer := make([]byte, size)
 	file.Read(buffer)
@@ -43,7 +56,8 @@ func UploadFileToS3(s *session.Session, file multipart.File, fileHeader *multipa
 		StorageClass:         aws.String("INTELLIGENT_TIERING"),
 	})
 	if err != nil {
-		return "", err
+		u.Respond(w, u.Message(false, "Error"))
+		return
 	}
 	param := &s3.GetObjectInput{
 		Bucket: aws.String("mypetapp"),
@@ -52,31 +66,58 @@ func UploadFileToS3(s *session.Session, file multipart.File, fileHeader *multipa
 
 	req, _ := svc.GetObjectRequest(param)
 
-	url, err := req.Presign(15 * time.Minute)
+	url, err := req.Presign(60 * time.Minute)
 
 	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println(url)
-
-	return tempFileName, err
-}
-
-func Handler(w http.ResponseWriter, r *http.Request) {
-	maxSize := int64(1024000) // allow only 1MB of file size
-
-	err := r.ParseMultipartForm(maxSize)
-	if err != nil {
-		log.Println(err)
-		fmt.Fprintf(w, "Image too large. Max Size: %v", maxSize)
+		u.Respond(w, u.Message(false, "Error"))
 		return
 	}
 
-	file, fileHeader, err := r.FormFile("picture")
+	resp := models.SaveAvatar(tk.UserId, url, tempFileName)
+	u.Respond(w, resp)
+}
+
+func GetAvatar(w http.ResponseWriter, r *http.Request) {
+
+	tokenHeader := r.Header.Get("Authorization")
+	splitted := strings.Split(tokenHeader, " ")
+	tokenPart := splitted[1]
+
+	tk := &models.Token{}
+	_, _ = jwt.ParseWithClaims(tokenPart, tk, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("token_password")), nil
+	})
+
+	region := os.Getenv("region")
+	secretId := os.Getenv("s3_id")
+	secretKey := os.Getenv("s3_secret")
+	// create an AWS session which can be
+	// reused if we're uploading many files
+	s, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: credentials.NewStaticCredentials(secretId, secretKey, ""),
+	})
 	if err != nil {
-		log.Println(err)
-		fmt.Fprintf(w, "Could not get uploaded file")
+		u.Respond(w, u.Message(false, "Could not upload file aws"))
+		return
+	}
+
+	resp := models.GetAvatar(tk.UserId, s)
+	u.Respond(w, resp)
+}
+
+func Handler(w http.ResponseWriter, r *http.Request) {
+	maxSize := int64(102400000) // allow only 1MB of file size
+
+	err := r.ParseMultipartForm(maxSize)
+	if err != nil {
+		u.Respond(w, u.Message(false, "Image too large"))
+		return
+	}
+
+	file, fileHeader, err := r.FormFile("photo")
+	if err != nil {
+		u.Respond(w, u.Message(false, "Could not get uploaded file"))
 		return
 	}
 	defer file.Close()
@@ -91,13 +132,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		Credentials: credentials.NewStaticCredentials(secretId, secretKey, ""),
 	})
 	if err != nil {
-		fmt.Fprintf(w, "Could not upload file aws")
+		u.Respond(w, u.Message(false, "Could not upload file aws"))
+		return
 	}
 
-	fileName, err := UploadFileToS3(s, file, fileHeader)
-	if err != nil {
-		fmt.Fprintf(w, "Could not upload file upl %v", err)
-	}
-
-	fmt.Fprintf(w, "Image uploaded successfully: %v", fileName)
+	UploadFileToS3(s, file, fileHeader, w, r)
 }

@@ -18,17 +18,24 @@ type Token struct {
 }
 
 //структура для учётной записи пользователя
+
 type Account struct {
 	gorm.Model
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Phone     string `json:"phone"`
-	OwnerName string `json:"owner_name"`
-	PetName   string `json:"pet_name"`
-	PetAge    string `json:"pet_age"`
-	Token     string `json:"token" sql:"-"`
-	PetType   uint   `json:"pet"`
-	BreedType uint   `json:"breed"`
+	Email      string  `json:"email"`
+	Password   string  `json:"password"`
+	Phone      string  `json:"phone"`
+	OwnerName  string  `json:"owner_name"`
+	Address    string  `json:"address"`
+	PetName    string  `json:"pet_name"`
+	PetAge     string  `json:"pet_age"`
+	Token      string  `json:"token" sql:"-"`
+	PetType    uint    `json:"pet"`
+	BreedType  uint    `json:"breed"`
+	Sex        string  `json:"sex"`
+	Status     string  `json:"status"`
+	Height     float64 `json:"height"`
+	Weight     float64 `json:"weight"`
+	AvatarFile string  `json:"avatar_file"`
 }
 
 type User struct {
@@ -40,6 +47,27 @@ type User struct {
 	Token         string `json:"token" sql:"-"`
 	PetTypeName   string `json:"pet_type" sql:"-"`
 	BreedTypeName string `json:"breed_type" sql:"-"`
+}
+
+type PetProfile struct {
+	PetName   string  `json:"pet_name"`
+	PetType   uint    `json:"pet_type"`
+	BreedType uint    `json:"breed_type"`
+	Sex       string  `json:"sex"`
+	Status    string  `json:"status"`
+	Height    float64 `json:"height"`
+	Weight    float64 `json:"weight"`
+}
+
+type UserProfile struct {
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Phone   string `json:"phone"`
+	Address string `json:"address"`
+}
+
+type Password struct {
+	SimplePassword string `json:"password"`
 }
 
 //Проверить входящие данные пользователя ...
@@ -160,14 +188,130 @@ func TransformAccountToUser(acc *Account) *User {
 	return user
 }
 
-func GetUser(u uint) *Account {
+func TransformAccountToPetProfile(acc *Account) *PetProfile {
 
-	acc := &Account{}
-	GetDB().Table("accounts").Where("id = ?", u).First(acc)
-	if acc.Email == "" { //Пользователь не найден!
-		return nil
+	petProfile := &PetProfile{}
+
+	petProfile.PetName, petProfile.PetType, petProfile.BreedType, petProfile.Sex, petProfile.Status, petProfile.Height, petProfile.Weight =
+		acc.PetName, acc.PetType, acc.BreedType, acc.Sex, acc.Status, acc.Height, acc.Weight
+
+	return petProfile
+}
+
+func TransformAccountToUserProfile(acc *Account) *UserProfile {
+
+	userProfile := &UserProfile{}
+
+	userProfile.Name, userProfile.Email, userProfile.Phone, userProfile.Address =
+		acc.OwnerName, acc.Email, acc.Phone, acc.Address
+
+	return userProfile
+}
+
+func GetUserProfile(id uint) map[string]interface{} {
+
+	account := &Account{}
+
+	err := GetDB().Table("accounts").Where("id = ?", id).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Email address not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
 	}
 
-	acc.Password = ""
-	return acc
+	userProfile := TransformAccountToUserProfile(account)
+
+	resp := u.Message(true, "User profile")
+	resp["data"] = userProfile
+	return resp
+}
+
+func GetPetProfile(id uint) map[string]interface{} {
+
+	account := &Account{}
+
+	err := GetDB().Table("accounts").Where("id = ?", id).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Email address not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	petProfile := TransformAccountToPetProfile(account)
+
+	resp := u.Message(true, "Pet profile")
+	resp["data"] = petProfile
+	return resp
+}
+
+func (userProfile *UserProfile) Edit(userId uint) map[string]interface{} {
+
+	account := &Account{}
+
+	err := GetDB().Table("accounts").Where("id = ?", userId).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Email address not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	account.OwnerName, account.Email, account.Phone, account.Address =
+		userProfile.Name, userProfile.Email, userProfile.Phone, userProfile.Address
+
+	err = GetDB().Save(account).Error
+	if err != nil {
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	return u.Message(true, "Success")
+}
+
+func (petProfile *PetProfile) Edit(userId uint) map[string]interface{} {
+
+	account := &Account{}
+
+	err := GetDB().Table("accounts").Where("id = ?", userId).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Email address not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	account.PetName, account.PetType, account.BreedType, account.Sex, account.Status, account.Height, account.Weight =
+		petProfile.PetName, petProfile.PetType, petProfile.BreedType, petProfile.Sex, petProfile.Status, petProfile.Height, petProfile.Weight
+
+	err = GetDB().Save(account).Error
+	if err != nil {
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	return u.Message(true, "Success")
+}
+
+func (password Password) Edit(userId uint) map[string]interface{} {
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password.SimplePassword), bcrypt.DefaultCost)
+	stringHashedPassword := string(hashedPassword)
+
+	account := &Account{}
+	err := GetDB().Table("accounts").Where("id = ?", userId).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Email address not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	account.Password = stringHashedPassword
+
+	err = GetDB().Save(account).Error
+	if err != nil {
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	return u.Message(true, "Success")
 }

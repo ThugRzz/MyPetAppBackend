@@ -22,6 +22,8 @@ func main() {
 	handleAuth(router)
 	handleReferences(router)
 	handlePhotoUpload(router)
+	handlePet(router)
+	handleProfile(router)
 
 	fmt.Println(port)
 
@@ -40,8 +42,27 @@ func handleAuth(router *mux.Router) {
 		controllers.Authenticate).Methods("POST")
 }
 
+func handleProfile(router *mux.Router) {
+	router.HandleFunc("/api/user/pet",
+		controllers.PetProfile).Methods("GET")
+
+	router.HandleFunc("/api/user/pet/edit",
+		controllers.EditPetProfile).Methods("POST")
+
+	router.HandleFunc("/api/user/profile",
+		controllers.UserProfile).Methods("GET")
+
+	router.HandleFunc("/api/user/profile/edit",
+		controllers.EditUserProfile).Methods("POST")
+
+	router.HandleFunc("/api/user/profile/password",
+		controllers.EditPassword).Methods("POST")
+}
+
 func handlePhotoUpload(router *mux.Router) {
-	router.HandleFunc("/test", controllers.Handler).Methods("POST")
+	router.HandleFunc("/api/user/avatar/upload", controllers.Handler).Methods("POST")
+	router.HandleFunc("/api/user/avatar",
+		controllers.GetAvatar).Methods("GET")
 }
 
 func handleReferences(router *mux.Router) {
@@ -64,4 +85,12 @@ func handleReferences(router *mux.Router) {
 		controllers.GetTrainingReferenceForBreed).Methods("GET")
 	router.HandleFunc("/api/reference/trainings",
 		controllers.GetTrainingReference).Methods("GET")
+}
+
+func handlePet(router *mux.Router) {
+	router.HandleFunc("/api/pet/types",
+		controllers.GetPetTypes).Methods("GET")
+
+	router.HandleFunc("/api/pet/breeds",
+		controllers.GetBreeds).Methods("GET")
 }
