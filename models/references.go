@@ -8,29 +8,41 @@ import (
 type Food struct {
 	gorm.Model
 	BreedType   uint   `json:"breed_type"`
+	PetType     uint   `json:"pet_type"`
 	Title       string `json:"title"`
+	StepTitle   string `json:"step_title"`
 	Description string `json:"description"`
+	ImageUrl    string `json:"image_url"`
 }
 
 type Care struct {
 	gorm.Model
 	BreedType   uint   `json:"breed_type"`
+	PetType     uint   `json:"pet_type"`
 	Title       string `json:"title"`
+	StepTitle   string `json:"step_title"`
 	Description string `json:"description"`
+	ImageUrl    string `json:"image_url"`
 }
 
 type Disease struct {
 	gorm.Model
 	BreedType   uint   `json:"breed_type"`
+	PetType     uint   `json:"pet_type"`
 	Title       string `json:"title"`
+	StepTitle   string `json:"step_title"`
 	Description string `json:"description"`
+	ImageUrl    string `json:"image_url"`
 }
 
 type Training struct {
 	gorm.Model
 	BreedType   uint   `json:"breed_type"`
+	PetType     uint   `json:"pet_type"`
 	Title       string `json:"title"`
+	StepTitle   string `json:"step_title"`
 	Description string `json:"description"`
+	ImageUrl    string `json:"image_url"`
 }
 
 func GetAllFoodReference() map[string]interface{} {
