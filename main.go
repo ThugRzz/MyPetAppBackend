@@ -30,8 +30,6 @@ func main() {
 
 	router.HandleFunc("/{id}", func(writer http.ResponseWriter, request *http.Request) {
 		http.ServeFile(writer, request, "./static/index.html")
-		http.ServeFile(writer, request, "./static/script.js")
-		http.ServeFile(writer, request, "./static/index.css")
 	})
 
 	fmt.Println(port)
