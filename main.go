@@ -4,7 +4,9 @@ import (
 	"diplomaProject/app"
 	"diplomaProject/controllers"
 	"fmt"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"os"
 )
@@ -24,10 +26,23 @@ func main() {
 	handlePhotoUpload(router)
 	handlePet(router)
 	handleProfile(router)
+	handleQrUser(router)
+
+	router.HandleFunc("/{id}", func(writer http.ResponseWriter, request *http.Request) {
+		http.ServeFile(writer, request, "./static/index.html")
+		http.ServeFile(writer, request, "./static/script.js")
+		http.ServeFile(writer, request, "./static/index.css")
+	})
 
 	fmt.Println(port)
 
-	err := http.ListenAndServe(":"+port, router)
+	router.PathPrefix("/").Handler(http.FileServer(rice.MustFindBox("static").HTTPBox()))
+	err := http.ListenAndServe(":8000", router)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = http.ListenAndServe(":"+port, router)
 
 	if err != nil {
 		fmt.Print(err)
@@ -93,4 +108,9 @@ func handlePet(router *mux.Router) {
 
 	router.HandleFunc("/api/pet/breeds",
 		controllers.GetBreeds).Methods("GET")
+}
+
+func handleQrUser(router *mux.Router) {
+	router.HandleFunc("/api/user/qr/{id}",
+		controllers.QrProfile).Methods("GET")
 }

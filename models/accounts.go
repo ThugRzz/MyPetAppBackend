@@ -38,6 +38,22 @@ type Account struct {
 	AvatarFile string  `json:"avatar_file"`
 }
 
+type QrUser struct {
+	gorm.Model
+	Email     string  `json:"email"`
+	Phone     string  `json:"phone"`
+	OwnerName string  `json:"owner_name"`
+	Address   string  `json:"address"`
+	PetName   string  `json:"pet_name"`
+	PetAge    string  `json:"pet_age"`
+	PetType   string  `json:"pet"`
+	BreedType string  `json:"breed"`
+	Sex       string  `json:"sex"`
+	Status    string  `json:"status"`
+	Height    float64 `json:"height"`
+	Weight    float64 `json:"weight"`
+}
+
 type User struct {
 	Email         string `json:"email"`
 	Phone         string `json:"phone"`
@@ -314,4 +330,46 @@ func (password Password) Edit(userId uint) map[string]interface{} {
 	}
 
 	return u.Message(true, "Success")
+}
+
+func GetQrUser(userId int) map[string]interface{} {
+
+	account := &Account{}
+	qrUser := &QrUser{}
+
+	petType := &Pet{}
+	petBreed := &Breed{}
+
+	err := GetDB().Table("accounts").Where("id= ?", userId).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "User not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	err = GetDB().Table("pets").Where("id= ?", account.PetType).First(petType).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Pet type not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	err = GetDB().Table("breeds").Where("id=?", account.BreedType).First(petBreed).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Email address not found")
+		}
+		return u.Message(false, "Connection error. Please retry")
+	}
+
+	qrUser.Address, qrUser.PetType, qrUser.BreedType, qrUser.PetName, qrUser.Phone, qrUser.Email, qrUser.OwnerName,
+		qrUser.Sex, qrUser.Status, qrUser.Weight, qrUser.Height, qrUser.PetAge, qrUser.ID, qrUser.CreatedAt, qrUser.UpdatedAt, qrUser.DeletedAt =
+		account.Address, petType.Name, petBreed.BreedName, account.PetName, account.Phone, account.Email, account.OwnerName, account.Sex,
+		account.Status, account.Weight, account.Height, account.PetAge, account.ID, account.CreatedAt, account.UpdatedAt, account.DeletedAt
+
+	resp := u.Message(true, "Qr Profile")
+	resp["data"] = qrUser
+	return resp
 }

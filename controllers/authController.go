@@ -5,8 +5,10 @@ import (
 	u "diplomaProject/utils"
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -128,5 +130,20 @@ var EditPassword = func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := password.Edit(tk.UserId)
+	u.Respond(w, resp)
+}
+
+var QrProfile = func(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		u.Respond(w, u.Message(false, "There was an error in your request"))
+		return
+	}
+
+	resp := models.GetQrUser(id)
 	u.Respond(w, resp)
 }
